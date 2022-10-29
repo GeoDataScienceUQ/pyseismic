@@ -1,0 +1,14 @@
+dask==2021.11.1
+h5py==2.10.0
+lshashpy3==0.0.8
+numpy==1.20.2
+open3d==0.13.0
+opencv-python-headless==4.5.4.60
+pandas==1.2.4
+pyntcloud==0.1.5
+scikit-image==0.18.1
+scikit-learn @ file:///C:/ci/scikit-learn_1598377018496/work
+scipy==1.6.3
+segyio==1.9.6
+segysak==0.3.3
+xarray==0.17.0
