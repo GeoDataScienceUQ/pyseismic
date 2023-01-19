@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-by Quentin Corlay
+maintainer: <corlayquentin@gmail.com>
 """
 
 import numpy as np 
@@ -23,48 +23,11 @@ from d2geo.attributes.EdgeDetection import EdgeDetection
 from d2geo.attributes.util import compute_chunk_size
 from utils import *
 
-def NormalizeData(data, thr, type='positive'):
-    """
-    Normalize data between 0 and 1 if positive and -1 and 0 if negative
-    param: thr (float): threshold to ceil the  data 
-    """
-    if type == 'positive':
-        data[data < 0] = 0.
-        data[data > thr] = thr
-        return (data / thr)
-    elif type == 'negative':
-        data[data > 0] = 0.
-        data[data < -thr] = -thr
-        return (data/ thr)
-    else:
-        print('Unrecognized type, expected "positive" or "negative", got {}'.format(type))
-
-@dask.delayed
-def get_point_cloud_chunks(seismic, xchunk, ychunk, extrema_type=np.greater):
-    """Extract extrema of a 1D signal"""
-    (nx, ny, nz) = seismic.shape
-    Lx = []
-    Ly = []
-    Lz = []
-    Lamp = []
-    for i in range (nx):
-        for j in range (ny):
-            maxima = argrelextrema(seismic[i,j], extrema_type)[0]
-            Lx.extend([xchunk + i]*len(maxima))
-            Ly.extend([ychunk + j]*len(maxima))
-            Lz.extend(maxima)
-            Lamp.extend(seismic[i,j,maxima])
-    point_cloud = np.zeros((4, len(Lx),), dtype='int32')
-    point_cloud[0, :] = Lx
-    point_cloud[1, :] = Ly
-    point_cloud[2, :] = Lz
-    point_cloud[3, :] = Lamp
-    return(point_cloud)
-
-
 
 class PointCloudSeismicInterpretation():
-    """Create Point Cloud Seismic dataframe from a  seismic cube"""
+    """
+    Create Point Cloud Seismic dataframe from a seismic cube
+    """
     def __init__( self, seismic_array, ampv95p=None ):
         self.load_seismic_array(seismic_array, ampv95p=ampv95p)
 
@@ -210,3 +173,45 @@ class PointCloudSeismicInterpretation():
         las.write(file)
         print("Las saved at {}".format(file))
         return None
+
+######
+# Functions
+######
+
+def NormalizeData(data, thr, type='positive'):
+    """
+    Normalize data between 0 and 1 if positive and -1 and 0 if negative
+    param: thr (float): threshold to ceil the  data 
+    """
+    if type == 'positive':
+        data[data < 0] = 0.
+        data[data > thr] = thr
+        return (data / thr)
+    elif type == 'negative':
+        data[data > 0] = 0.
+        data[data < -thr] = -thr
+        return (data/ thr)
+    else:
+        print('Unrecognized type, expected "positive" or "negative", got {}'.format(type))
+
+@dask.delayed
+def get_point_cloud_chunks(seismic, xchunk, ychunk, extrema_type=np.greater):
+    """Extract extrema of a 1D signal"""
+    (nx, ny, nz) = seismic.shape
+    Lx = []
+    Ly = []
+    Lz = []
+    Lamp = []
+    for i in range (nx):
+        for j in range (ny):
+            maxima = argrelextrema(seismic[i,j], extrema_type)[0]
+            Lx.extend([xchunk + i]*len(maxima))
+            Ly.extend([ychunk + j]*len(maxima))
+            Lz.extend(maxima)
+            Lamp.extend(seismic[i,j,maxima])
+    point_cloud = np.zeros((4, len(Lx),), dtype='int32')
+    point_cloud[0, :] = Lx
+    point_cloud[1, :] = Ly
+    point_cloud[2, :] = Lz
+    point_cloud[3, :] = Lamp
+    return(point_cloud)
