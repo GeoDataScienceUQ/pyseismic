@@ -33,6 +33,7 @@ class PointCloudSeismicInterpretation():
         filter on semblance and filter on amplitude
 
     Attributes:
+    -----------
         seismic_array (np.array): 3D seismic cube as a 3D numpy array with amplitude reflectivity values
         point_cloud (np.array): point cloud attribute as a 2D array with shape (n, 3) with n being the number 
             of points and the second axis being the coordinates of the points (x, y, z)
@@ -42,6 +43,7 @@ class PointCloudSeismicInterpretation():
         ampv95p (float): approximate of the 95-th percentile of the seismic amplitude
 
     Methods:
+    ---------
         load_seismic_array: Loads the 3D seismic cube
         extrema_extraction: Extracts the point cloud from the seismic with local extrema in the trace direction
         extrema_extraction_dask: Extracts the point cloud from the seismic with local extrema in the trace direction
@@ -87,6 +89,7 @@ class PointCloudSeismicInterpretation():
         Amplitude values are normalized and stored in a amplitude point cloud attribute 
 
         Args:
+        -----
             extrema_type (callable, default np.greater): np.greater or np.less, the type of extrema to extract (maxima or minima)
         """
         t0 = datetime.now()
@@ -119,6 +122,7 @@ class PointCloudSeismicInterpretation():
         Dask multiprocessing implementation
 
         Args:
+        -----
             extrema_type (callable, default np.greater): np.greater or np.less, the type of extrema to extract (maxima or minima)
         """
         t0 = datetime.now()
@@ -150,6 +154,7 @@ class PointCloudSeismicInterpretation():
         Computes the semblance cube and filters the point cloud based on semblance cut-off 
 
         Args:
+        -----
             kernel (tuple, default (3, 3, 9)): tuple of int (x, y, z) the dimension of the 3D kernel applied to compute semblance
             thr (float, default 0.9): semblance threshold, float between 0 and 1
             in_place (bool, default True): If True, perform operation in-place.
@@ -186,6 +191,7 @@ class PointCloudSeismicInterpretation():
         Filters the point cloud based on amplitude cut-off
 
         Args:
+        -----
             thr (float, default 0.25): amplitude threshold, float between 0 and 1
             in_place (bool, default True): If True, perform operation in-place.
         """
@@ -208,6 +214,7 @@ class PointCloudSeismicInterpretation():
         Segments the point cloud based on DBSCAN clustering - sklearn implementation
 
         Args:
+        -----
             eps (float, default 2): epsilon distance parameter to DBSCAN
             min_samples (int, default 8): minimum number of points parameter to DBSCAN
             z_factor (int, default 1): vertical exageration to apply to the seismic point cloud
@@ -231,10 +238,12 @@ def NormalizeData(data: np.array, thr: float, type='positive'):
     Normalize data between [0, thr] if positive and [-thr, 0] if negative
 
     Args: 
+    -----
         data (np.array): 
         thr (float): threshold to ceil the  data 
 
     Returns:
+    --------
         np.array: data normalized
     """
     if type == 'positive':
@@ -254,13 +263,17 @@ def get_point_cloud_chunks(seismic, xchunk, ychunk, extrema_type=np.greater):
     """
     Description
     -----------
-    Extract extrema of a 1D signal
+    Extract extrema of a 1D signal - dask delayed implementation
 
     Args: 
-        data (np.array): 
-        thr (float): threshold to ceil the  data 
+    -----
+        seismic (np.array): 
+        xchunk (int): 
+        ychunk (int): 
+        extrema_type (callable, default np.greater): np.greater or np.less, the type of extrema to extract (maxima or minima)
 
     Returns:
+    --------
         np.array: point cloud of extrema from data, shape (3, n): first axis being the coordinates, 
             second axis being the n extrema points
     """

@@ -12,18 +12,55 @@ from datetime import datetime
 import pandas as pd
 
 class PointCloudObjectRetrieval():
-    """Characterise every object in a seismic point cloud"""
-    def __init__( self, point_cloud, semblance, labels_point_cloud ):
+    """
+    Description
+    -----------
+    Characterise every object in a seismic point cloud
+
+    Attributes:
+    -----------
+        point_cloud (np.array):
+        semblance (np.array):
+        labels_pointcloud (np.array or list):
+    
+    Methods:
+    --------
+        get_features: Extracts pandas dataFrame containing the features descriptives of every selected cluster
+    """
+    def __init__( self, point_cloud: np.array, semblance: np.array, labels_point_cloud: (np.array or list) ):
+        """
+        Description
+        -----------
+        Initiates the point cloud objects
+
+        Args:
+        -----
+            point_cloud (np.array): point cloud coordinates (n, 4), first axis being the n points, 
+                second axis being the point coordinates and the amplitude reflectivity value (x, y, z, amp)
+            semblance (np.array): semblance values of the point cloud 
+            labels_point_cloud (np.array or list): label values of the point cloud
+        """
         self.point_cloud = point_cloud
         self.semblance = semblance
         self.labels_point_cloud = labels_point_cloud
 
-    def get_features(self, selected_clusters):
+    def get_features(self, selected_clusters: (np.array or list)):
         """
-        Extract pandas dataFrame containing the features descriptives of every selected point cloud
+        Description
+        -----------
+        Extracts pandas dataFrame containing the features descriptives of every selected cluster
         Features: segmentID, n points, amplitude mean, semblance mean, Zeboudj distance, 
             contour ratio, lambda1, lambda2, "lambda3", linearity,
             slope, planarity, orientation, rZHigh, rZLow
+
+        Args:
+        -----
+            selected_clusters (np.array or list): list of cluster ids for which to perform the feature extraction
+
+        Returns:
+        --------
+            pd.DataFrame: Each row represents a cluster of the segmented point cloud and each collumn 
+                represents the feature values 
         """
         t0 = datetime.now()
         Features = []
@@ -52,8 +89,18 @@ class PointCloudObjectRetrieval():
 ## functions
 #########
 
-def get_aspect_ratio(pcd):
+def get_aspect_ratio(pcd: np.array):
     """
+    Description
+    -----------
+    Gets the 3 eigen values, the linearity, the slope, the planarity and the orientation of of a point cloud object
+
+    Args:
+        pcd (np.array): a point cloud (n, 3)
+
+    Returns:
+    --------
+        (list): [v1, v2, v3, linearity, slope, planarity, orientation] with vn being the n eigen value of the point cloud
     """
     pcd_sampling = np.random.choice(len(pcd), 
         size=min(int(len(pcd)*0.5), 500), replace=False) #min([int(len(point_cloud)*0.2), 1000]), replace=False)
@@ -67,8 +114,17 @@ def get_aspect_ratio(pcd):
         (eigvals[0]-eigvals[1])/eigvals[0], eigvals[2]/eigvals[0], (eigvals[1]-eigvals[2])/eigvals[0], orientation]
     )
 
-def get_outline_ratio(pcd):
+def get_outline_ratio(pcd: np.array):
     """
+    Description
+    -----------
+    Gets the outline ratio of a point cloud object
+    The outline ratio is obtained by projection the 3D point cloud on a 2D plane, 
+        and computing its contour over its surface
+
+    Retruns:
+    --------
+        float: the contour ratio
     """
     #convert 2d projection to image
     #shift X and Y coordinate to 0 origin
@@ -86,12 +142,19 @@ def get_outline_ratio(pcd):
     surface = Imgthresh.sum()/255
     return (length/surface)
 
-def get_zeboudj_distance(pcd, distance = 2.5):
+def get_zeboudj_distance(pcd: np.array, distance: float = 2.5):
     """
+    Description
+    -----------
+    Gets the Zeboudj distance of the spatial distribution of amplitude of a point cloud object
+
+    Returns
+    -------
     """
-    #build kdtree for each cluster
+    #sample large point cloud to save processing time although keeping a good approximate
     pcd_sampling = np.random.choice(len(pcd), size=min(int(len(pcd)*0.5), 10000), replace=False)
     cl_sample = pcd[pcd_sampling]
+    #build kdtree for each cluster
     tree = KDTree(cl_sample[:,:3])
     #loop over every point within the cluster to compute color distances with its neighbourhood
     L_neighbors_idxs = tree.query_radius(cl_sample[:,:3], r=distance)
@@ -105,8 +168,15 @@ def get_zeboudj_distance(pcd, distance = 2.5):
     CI = CI/len(cl_sample)
     return (CI)
 
-def get_depth_distribution(pcd):
+def get_depth_distribution(pcd: np.array):
     """
+    Description
+    -----------
+    Gets the distribution of points of a point cloud object in the vertical axis
+
+    Returns:
+    --------
+        (list): [p1, p2] p1 proportion under one forth of the depth, p2 proportion above three fourth of the depth
     """
     zmin = np.percentile(pcd[:,2], 2)
     zmax = np.percentile(pcd[:,2], 98)
@@ -114,8 +184,16 @@ def get_depth_distribution(pcd):
     r_zhigh = len(pcd[pcd[:,2]>zmax-(zmax-zmin)/4])/len(pcd) #proportion_over_three_fourth
     return([r_zlow, r_zhigh])
 
-def extract_features(pcd, semblance):
+def extract_features(pcd: np.array, semblance: np.array):
     """
+    Description
+    -----------
+    Extracts all features of a point cloud object
+
+    Returns:
+    --------
+        (list): [n_points, amp_mean, semblance_mean, zeboudj_distance, outline_ratio, v1, v2, v3, linearity, 
+            slope, planarity, orientation, p1, p2]
     """
     n_points = len(pcd)
     amp_mean = pcd[:,3].mean()
