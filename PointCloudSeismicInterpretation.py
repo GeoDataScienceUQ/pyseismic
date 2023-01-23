@@ -8,13 +8,13 @@ import numpy as np
 import pandas as pd
 from scipy.signal import argrelextrema
 from datetime import datetime
-import math
+# import math
 # from numba import njit, jit, vectorize
-import itertools
-import multiprocessing
-import sys
-from tqdm import tqdm
-import laspy
+# import itertools
+# import multiprocessing
+# import sys
+# from tqdm import tqdm
+# import laspy
 from sklearn.cluster import DBSCAN
 import dask.array as da
 import dask
@@ -26,12 +26,45 @@ from utils import *
 
 class PointCloudSeismicInterpretation():
     """
-    Create Point Cloud Seismic dataframe from a seismic cube
+    Description
+    -----------
+    Create Point Cloud Seismic dataframe from a 3D seismic cube
+    The point cloud is extracted by local extrema extraction in the trace direction, 
+        filter on semblance and filter on amplitude
+
+    Attributes:
+        seismic_array (np.array): 3D seismic cube as a 3D numpy array with amplitude reflectivity values
+        point_cloud (np.array): point cloud attribute as a 2D array with shape (n, 3) with n being the number 
+            of points and the second axis being the coordinates of the points (x, y, z)
+        amplitude_point_cloud (np.array): amplitude reflectivity values of the points of the point cloud
+        semblance_array (np.array): 3D semblance cube computed from the 3D seismic 
+        semblance_point_cloud (np.array): semblance values of the points of the point cloud 
+        ampv95p (float): approximate of the 95-th percentile of the seismic amplitude
+
+    Methods:
+        load_seismic_array: Loads the 3D seismic cube
+        extrema_extraction: Extracts the point cloud from the seismic with local extrema in the trace direction
+        extrema_extraction_dask: Extracts the point cloud from the seismic with local extrema in the trace direction
+            - multiprocessing with dask
+        filter_point_cloud_with_semblance: Computes the semblance cube and filters the point cloud based on semblance cut-off 
+        filter_point_cloud_with_amplitude: Filters the point cloud based on amplitude cut-off
+        DBSCAN_segmentation_sklearn: segments the point cloud based on DBSCAN clustering - sklearn implementation
+
     """
     def __init__( self, seismic_array, ampv95p=None ):
         self.load_seismic_array(seismic_array, ampv95p=ampv95p)
 
     def load_seismic_array(self, seismic_array, ampv95p=None):
+        """
+        Description
+        -----------
+        Loads the 3D seismic cube, computes 95th amplitude quartile and the intialise the point cloud objects 
+
+        Args:
+            seismic_array (np.array): 3D seismic cube as a 3D numpy array with amplitude reflectivity values
+            ampv95p (float or None): the 95-th percentile of the seismic amplitude 
+                - if not None prevents from having to compute it
+        """
         self.seismic_array = seismic_array
         if not ampv95p:
             self.ampv95p = np.percentile(self.seismic_array[self.seismic_array.shape[0]//2:self.seismic_array.shape[0]//2+100,
@@ -46,9 +79,15 @@ class PointCloudSeismicInterpretation():
 
     def extrema_extraction(self, extrema_type=np.greater):
         """
+        Description
+        -----------
         Extract extrema in the trace direction (3rd dimension) of a 3D array
-        Creates a point cloud attribute (numpy.array) of shape [n_extrema, 4]
-        Each row of the point cloud being [x,, y, z, normalized_amplitude] of the each extrema
+        Creates a point cloud attribute (numpy.array) of shape [n_extrema, 3]
+        Each row of the point cloud being [x,, y, z] of the each extrema
+        Amplitude values are normalized and stored in a amplitude point cloud attribute 
+
+        Args:
+            extrema_type (callable, default np.greater): np.greater or np.less, the type of extrema to extract (maxima or minima)
         """
         t0 = datetime.now()
         (nx, ny, nz) = self.seismic_array.shape
@@ -70,6 +109,18 @@ class PointCloudSeismicInterpretation():
         print('Point cloud created -  {} points - time to execute: {}'.format(self.point_cloud.shape[0], datetime.now()-t0))
 
     def extrema_extraction_dask(self, extrema_type=np.greater):
+        """
+        Description
+        -----------
+        Extract extrema in the trace direction (3rd dimension) of a 3D array
+        Creates a point cloud attribute (numpy.array) of shape [n_extrema, 3]
+        Each row of the point cloud being [x,, y, z] of the each extrema
+        Amplitude values are normalized and stored in a amplitude point cloud attribute 
+        Dask multiprocessing implementation
+
+        Args:
+            extrema_type (callable, default np.greater): np.greater or np.less, the type of extrema to extract (maxima or minima)
+        """
         t0 = datetime.now()
         (xChunkSize, yChunkSize, zChunkSize) = compute_chunk_size(self.seismic_array.shape, 
                         self.seismic_array.dtype.itemsize, 
@@ -94,7 +145,14 @@ class PointCloudSeismicInterpretation():
 
     def filter_point_cloud_with_semblance(self, kernel=(3, 3, 9), thr=0.9, in_place=True):
         """
-        Apply a filter on semblance seismic attribute
+        Description
+        -----------
+        Computes the semblance cube and filters the point cloud based on semblance cut-off 
+
+        Args:
+            kernel (tuple, default (3, 3, 9)): tuple of int (x, y, z) the dimension of the 3D kernel applied to compute semblance
+            thr (float, default 0.9): semblance threshold, float between 0 and 1
+            in_place (bool, default True): If True, perform operation in-place.
         """
         if self.point_cloud.size == 0:
             print('Point cloud not computed - extracting extrema first')
@@ -123,7 +181,13 @@ class PointCloudSeismicInterpretation():
 
     def filter_point_cloud_with_amplitude(self, thr=0.25, in_place=True):
         """
-        Apply a threshold on amplitude values
+        Description
+        -----------
+        Filters the point cloud based on amplitude cut-off
+
+        Args:
+            thr (float, default 0.25): amplitude threshold, float between 0 and 1
+            in_place (bool, default True): If True, perform operation in-place.
         """
         if self.point_cloud.size == 0:
             print('Point cloud not computed - extract extrema first')
@@ -137,7 +201,17 @@ class PointCloudSeismicInterpretation():
         else:
             return (self.point_cloud[ self.amplitude_point_cloud > thr ])
 
-    def DBSCAN_interpretation(self, eps=9, min_samples=100, z_factor=2):
+    def DBSCAN_segmentation_sklearn(self, eps=2, min_samples=8, z_factor=1):
+        """
+        Description
+        -----------
+        Segments the point cloud based on DBSCAN clustering - sklearn implementation
+
+        Args:
+            eps (float, default 2): epsilon distance parameter to DBSCAN
+            min_samples (int, default 8): minimum number of points parameter to DBSCAN
+            z_factor (int, default 1): vertical exageration to apply to the seismic point cloud
+        """
         t0=datetime.now()
         point_cloud_to_compute = self.point_cloud.copy()
         point_cloud_to_compute[:, 2] = self.point_cloud[:, 2]*z_factor
@@ -146,42 +220,22 @@ class PointCloudSeismicInterpretation():
         self.labels = clustering.labels_
         print('seismic segmented - {} clusters - time {}'.format( self.labels.max()+1, datetime.now()-t0 ))
 
-    def save_as_pickle( self, file ):
-        try:
-            to_pickle(self.point_cloud, file)
-        except Exception as e:
-            sys.stderr('Could not save file on %s, error: %s'%(file, e))
-        else:
-            print('File saved to file: %s'%(file))
-
-    def load_pickle_to_point_could( self, file ):
-        """ Load an existing point cloud as a dataframe from a pickle file """
-        try:
-            self.point_cloud = pd.read_pickle(file)
-        except Exception as e:
-            sys.stderr('Could not save file %s, error: %s'%(file, e))
-        else:
-            print('Point cloud loaded!')
-
-    def save_as_las( self, file="./simpleLas.las" ):
-        las = laspy.create(file_version="1.4", point_format=6)
-        las.header.scales = [1., 1., 1.]
-        las.X = self.point_cloud[0]
-        las.Y = self.point_cloud[1]
-        las.Z = self.point_cloud[2]
-        # las.Intensity = self.data_.Amplitude
-        las.write(file)
-        print("Las saved at {}".format(file))
-        return None
-
 ######
 # Functions
 ######
 
-def NormalizeData(data, thr, type='positive'):
+def NormalizeData(data: np.array, thr: float, type='positive'):
     """
-    Normalize data between 0 and 1 if positive and -1 and 0 if negative
-    param: thr (float): threshold to ceil the  data 
+    Description
+    -----------
+    Normalize data between [0, thr] if positive and [-thr, 0] if negative
+
+    Args: 
+        data (np.array): 
+        thr (float): threshold to ceil the  data 
+
+    Returns:
+        np.array: data normalized
     """
     if type == 'positive':
         data[data < 0] = 0.
@@ -193,10 +247,23 @@ def NormalizeData(data, thr, type='positive'):
         return (data/ thr)
     else:
         print('Unrecognized type, expected "positive" or "negative", got {}'.format(type))
+        return None
 
 @dask.delayed
 def get_point_cloud_chunks(seismic, xchunk, ychunk, extrema_type=np.greater):
-    """Extract extrema of a 1D signal"""
+    """
+    Description
+    -----------
+    Extract extrema of a 1D signal
+
+    Args: 
+        data (np.array): 
+        thr (float): threshold to ceil the  data 
+
+    Returns:
+        np.array: point cloud of extrema from data, shape (3, n): first axis being the coordinates, 
+            second axis being the n extrema points
+    """
     (nx, ny, nz) = seismic.shape
     Lx = []
     Ly = []
