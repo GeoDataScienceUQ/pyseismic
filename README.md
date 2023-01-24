@@ -78,3 +78,7 @@ response = lsh_variable.query(feature_example, num_results=n_items, distance_fun
 For a more complete demo run the the file notebooks/F3dataset-segmentation.ipynb
 
 It gives a complete example of seismic segmentation of the open-source F3-dataset (https://terranubis.com/datainfo/F3-Demo-2020) and geobody detection -specially efficient to retrieve channel geobodies in the seismic-.
+
+#### Point cloud seismic segmentation of F3 seismic data
+![](assets/images/seismic-segmentation.gif)
+
