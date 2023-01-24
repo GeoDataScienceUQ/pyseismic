@@ -82,3 +82,5 @@ It gives a complete example of seismic segmentation of the open-source F3-datase
 #### Point cloud seismic segmentation of F3 seismic data
 ![](assets/images/seismic-segmentation.gif)
 
+#### Geobody detection - channels - in the F3 seismic data (150-closest objects)
+![](assets/images/geobody-detection.PNG)
