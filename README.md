@@ -29,9 +29,9 @@ pointCloudInterpretor.filter_point_cloud_with_amplitude(thr=0.20, in_place=True)
 
 #create an open3D point cloud object and segment the point cloud with DBSCAN
 pcd_pyntcloud = PyntCloud(pd.DataFrame(data={'x':pointCloudInterpretor.point_cloud.T[0], 
-                                                'y':pointCloudInterpretor.point_cloud.T[1], 
-                                                'z':pointCloudInterpretor.point_cloud.T[2], 
-                                                'amplitude':pointCloudInterpretor.amplitude_point_cloud})[:])
+                                        'y':pointCloudInterpretor.point_cloud.T[1], 
+                                        'z':pointCloudInterpretor.point_cloud.T[2], 
+                                        'amplitude':pointCloudInterpretor.amplitude_point_cloud})[:])
 pcd_o3d = pcd_pyntcloud.to_instance("open3d", mesh=False)
 with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
     labels = np.array(
