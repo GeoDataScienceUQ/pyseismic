@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-by Quentin Corlay
+maintainer: <corlayquentin@gmail.com>
 """
 
 import pickle
