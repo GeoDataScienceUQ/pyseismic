@@ -83,4 +83,4 @@ It gives a complete example of seismic segmentation of the open-source F3-datase
 ![](assets/images/seismic-segmentation.gif)
 
 #### Geobody detection - elongated geobodies - in the F3 seismic data (150-closest objects)
-![](assets/images/geobody-detection.PNG)
+<img src="assets/images/geobody-detection.PNG" alt="drawing" width="50%"/>
