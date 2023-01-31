@@ -37,3 +37,13 @@ def printProgressBar (iteration, total, prefix = 'Progress: ', suffix = 'Complet
     if iteration == total:
         sys.stdout.write('\n')
     sys.stdout.flush()
+
+def write_pcd_to_ASCII(pcd, cdp_x, cdp_y, twt, file_path):
+    with open(file_path, 'w') as the_file:
+        #convert point from cube coordinates to point referenced coordinates
+        the_file.write("CDP_X   CDP_Y   TWT\n")
+        for (x, y, z) in pcd:
+#             the_file.write("INLINE :   {} XLINE :   {}   {}   {}   {}\n".format(
+#                 int(iline[x]), int(xline[y]), float(cdp_x[x, y]), float(cdp_y[x, y]), int(twt[z])))
+            the_file.write("{}   {}   {}\n".format(
+                float(cdp_x[x, y]), float(cdp_y[x, y]), int(twt[z])))
