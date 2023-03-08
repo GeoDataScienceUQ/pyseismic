@@ -41,6 +41,7 @@ with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm
 For geobody detection in a segmented seismic
 
 ```python 
+from lshashpy3 import LSHash
 from PointCloudObjectRetrieval import PointCloudObjectRetrieval
 
 #merge seismic point cloud and amplitude point cloud in an numpy array ([n_points, 4])
