@@ -12,3 +12,4 @@ scipy==1.6.3
 segyio==1.9.6
 segysak==0.3.3
 xarray==0.17.0
+lshashpy3
