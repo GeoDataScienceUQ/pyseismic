@@ -8,13 +8,6 @@ import numpy as np
 import pandas as pd
 from scipy.signal import argrelextrema
 from datetime import datetime
-# import math
-# from numba import njit, jit, vectorize
-# import itertools
-# import multiprocessing
-# import sys
-# from tqdm import tqdm
-# import laspy
 from sklearn.cluster import DBSCAN
 import dask.array as da
 import dask
@@ -176,7 +169,7 @@ class PointCloudSeismicInterpretation():
             print('Semblance point cloud extracted - time to execute: {}'.format(datetime.now()-t0))
         t0 = datetime.now()
         if in_place:
-            mask = [ self.semblance_point_cloud > thr ]
+            mask = self.semblance_point_cloud > thr
             self.point_cloud = self.point_cloud[mask]
             self.amplitude_point_cloud = self.amplitude_point_cloud[mask]
             self.semblance_point_cloud = self.semblance_point_cloud[mask]
@@ -199,7 +192,7 @@ class PointCloudSeismicInterpretation():
             print('Point cloud not computed - extract extrema first')
         t0 = datetime.now()
         if in_place:
-            mask = [ self.amplitude_point_cloud > thr]
+            mask = self.amplitude_point_cloud > thr
             self.point_cloud = self.point_cloud[mask]
             self.semblance_point_cloud = self.semblance_point_cloud[mask]
             self.amplitude_point_cloud = self.amplitude_point_cloud[mask]
